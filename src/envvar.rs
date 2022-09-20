@@ -8,15 +8,18 @@ pub mod environment_variable {
         fn set(&self, name: &String, value: &String) -> Result<(), String>;
         fn remove(&self, name: &String) -> Result<(), String>;
 
-        fn get_path(&self) -> Result<Vec<String>, String>;
+        fn get_path(&self, delimiter: Option<char>) -> Result<Vec<String>, String>;
+        fn set_path(&self, paths: &Vec<String>, delimiter: Option<char>) -> Result<(), String>;
         fn append_path(&self, path: &Path) -> usize;
-        fn insert_path(&self, path: &Path) -> usize;
-        fn delete_path_by_index(&self, index: usize) -> usize;
-        fn delete_path_by_value(&self, path: &Path) -> usize;
+        fn insert_path(&self, path: &Path, to: usize) -> usize;
+        fn delete_path(&self, by: usize) -> usize;
+        fn delete_path_from(&self, path: &Path) -> usize;
     }
 
     #[cfg(target_os = "windows")]
     pub mod env {
+        use std::path::Path;
+
         use crate::envvar::environment_variable::EnvironmentVariable;
 
         use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
@@ -228,11 +231,16 @@ pub mod environment_variable {
                 Ok(())
             }
 
-            fn get_path(&self) -> Result<Vec<String>, String> {
+            fn get_path(&self, delimiter: Option<char>) -> Result<Vec<String>, String> {
                 match self.get(&PATH.to_string()) {
                     Ok(e) => {
+                        let d = if delimiter.is_some() {
+                            delimiter.unwrap()
+                        } else {
+                            PATH_DELIMITER
+                        };
                         return Ok(e
-                            .split(&PATH_DELIMITER.to_string())
+                            .split(&d.to_string())
                             .map(|s| s.trim().to_string())
                             .collect());
                     }
@@ -242,19 +250,23 @@ pub mod environment_variable {
                 }
             }
 
+            fn set_path(&self, paths: &Vec<String>, delimiter: Option<char>) -> Result<(), String> {
+                todo!()
+            }
+
             fn append_path(&self, path: &std::path::Path) -> usize {
                 todo!()
             }
 
-            fn insert_path(&self, path: &std::path::Path) -> usize {
+            fn insert_path(&self, path: &Path, to: usize) -> usize {
                 todo!()
             }
 
-            fn delete_path_by_index(&self, index: usize) -> usize {
+            fn delete_path(&self, by: usize) -> usize {
                 todo!()
             }
 
-            fn delete_path_by_value(&self, path: &std::path::Path) -> usize {
+            fn delete_path_from(&self, path: &Path) -> usize {
                 todo!()
             }
         }
