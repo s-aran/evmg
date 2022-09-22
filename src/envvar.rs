@@ -15,10 +15,26 @@ pub mod environment_variable {
             values: &Vec<String>,
             delimiter: &String,
         ) -> Result<(), String>;
-        fn append_list(&self, name: &String, value: &String) -> Result<(), String>;
-        fn insert_list(&self, name: &String, value: &String, to: usize) -> Result<(), String>;
-        fn remove_list(&self, name: &String, by: usize) -> Result<(), String>;
-        fn remove_list_from(&self, name: &String, value: &String) -> Result<(), String>;
+        fn append_list(
+            &self,
+            name: &String,
+            value: &String,
+            delimiter: &String,
+        ) -> Result<(), String>;
+        fn insert_list(
+            &self,
+            name: &String,
+            value: &String,
+            to: usize,
+            delimiter: &String,
+        ) -> Result<(), String>;
+        fn remove_list(&self, name: &String, by: usize, delimiter: &String) -> Result<(), String>;
+        fn remove_list_from(
+            &self,
+            name: &String,
+            value: &String,
+            delimiter: &String,
+        ) -> Result<(), String>;
 
         fn get_path(&self) -> Result<Vec<String>, String>;
         fn set_path(&self, paths: &Vec<String>) -> Result<(), String>;
