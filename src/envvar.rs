@@ -72,7 +72,7 @@ pub mod environment_variable {
             }
 
             fn string_to_u8vec(s: &String) -> Vec<u8> {
-                let u16vec = Self::string_to_u16vec(s);
+                let u16vec: Vec<u16> = Self::string_to_u16vec(s);
                 let mut u8vec: Vec<u8> = Vec::new();
                 for e in &u16vec {
                     u8vec.push((e & 0x00FF) as u8);
