@@ -287,7 +287,7 @@ pub mod environment_variable {
                         let removed_terminal = &chars[0..e.len() - 1].iter().collect::<String>();
                         Ok(removed_terminal
                             .split(delimiter)
-                            .map(|s| s.trim().to_string())
+                            .map(|s| s.to_string())
                             .collect())
                     }
                     Err(e) => Err(e),
