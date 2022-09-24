@@ -29,7 +29,8 @@ pub mod environment_variable {
             to: usize,
             delimiter: &String,
         ) -> Result<(), String>;
-        fn remove_list(&self, name: &String, by: usize, delimiter: &String) -> Result<(), String>;
+        fn remove_list(&self, name: &String, from: usize, delimiter: &String)
+            -> Result<(), String>;
         fn remove_list_from(
             &self,
             name: &String,
@@ -49,7 +50,7 @@ pub mod environment_variable {
     pub mod env {
         use std::path::Path;
 
-        use crate::envvar::environment_variable::EnvironmentVariable;
+        use crate::{envvar::environment_variable::EnvironmentVariable, utils::utils::print_vec};
 
         use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
 
@@ -340,10 +341,17 @@ pub mod environment_variable {
             fn remove_list(
                 &self,
                 name: &String,
-                by: usize,
+                from: usize,
                 delimiter: &String,
             ) -> Result<(), String> {
-                todo!()
+                match self.get_list(name, delimiter) {
+                    Ok(l) => {
+                        let mut ll = l;
+                        ll.remove(from);
+                        self.set_list(name, &ll, delimiter)
+                    }
+                    Err(s) => Err(s),
+                }
             }
 
             fn remove_list_from(
@@ -352,7 +360,17 @@ pub mod environment_variable {
                 value: &String,
                 delimiter: &String,
             ) -> Result<(), String> {
-                todo!()
+                match self.get_list(name, delimiter) {
+                    Ok(l) => {
+                        let ll = l
+                            .iter()
+                            .filter(|&e| e != value)
+                            .map(|e| e.to_string())
+                            .collect::<Vec<String>>();
+                        self.set_list(name, &ll, delimiter)
+                    }
+                    Err(s) => Err(s),
+                }
             }
 
             fn get_path(&self) -> Result<Vec<String>, String> {
