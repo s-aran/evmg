@@ -1,4 +1,5 @@
 pub mod environment_variable {
+
     use std::path::Path;
 
     pub trait EnvironmentVariable {
@@ -48,7 +49,7 @@ pub mod environment_variable {
     pub mod env {
         use std::path::Path;
 
-        use crate::envvar::environment_variable::EnvironmentVariable;
+        use crate::{envvar::environment_variable::EnvironmentVariable, utils::utils::print_hex};
 
         use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
 
@@ -72,83 +73,15 @@ pub mod environment_variable {
             }
 
             fn string_to_u8vec(s: &String) -> Vec<u8> {
+                // let cc = s.chars().map(|e| e as u8).collect::<Vec<u8>>();
                 let u16vec: Vec<u16> = Self::string_to_u16vec(s);
-                let mut u8vec: Vec<u8> = Vec::new();
-                for e in &u16vec {
+                let mut u8vec: Vec<u8> = Vec::with_capacity(u16vec.len() << 1);
+                for e in u16vec.iter() {
                     u8vec.push((e & 0x00FF) as u8);
                     u8vec.push(((e & 0xFF00) >> 8) as u8);
                 }
 
                 u8vec
-            }
-
-            fn print_hex(s: &Vec<u8>) {
-                print!("     | +0 +1 +2 +3 +4 +5 +6 +7  +8 +9 +A +B +C +D +E +F");
-                print!(" | 0123456789ABCDEF");
-                println!("");
-
-                print!("-----+-------------------------------------------------");
-                print!("-+-----------------");
-
-                let mut chars: Vec<char> = Vec::<char>::with_capacity(16);
-                for (i, e) in s.iter().enumerate() {
-                    if (i & 0x0F) == 0 {
-                        println!("");
-                        print!("{:04X} |", i);
-                    }
-
-                    if (i & 0x0F) == 0x08 {
-                        print!(" ");
-                    }
-
-                    print!(" {:02X}", e);
-                    chars.push(match std::char::from_u32(*e as u32) {
-                        Some(c) => {
-                            if c.is_ascii_graphic() {
-                                c
-                            } else {
-                                '.'
-                            }
-                        }
-                        None => '.',
-                    });
-
-                    if i > 0 && (i & 0xF) == 0xF {
-                        print!(" | ");
-                        for c in &chars {
-                            print!("{}", c);
-                        }
-                        chars.clear();
-                    }
-                }
-
-                let slen_mod_16 = s.len() & 0x0F;
-                if slen_mod_16 > 0 {
-                    for _ in 0..(16 - slen_mod_16) {
-                        print!("   ");
-                    }
-                    print!("  | ");
-                    for i in 0..(slen_mod_16 - 1) {
-                        print!(
-                            "{}",
-                            match std::char::from_u32(
-                                *s.get((s.len() & 0xFFFF_FFF0) | i).unwrap() as u32
-                            ) {
-                                Some(c) => {
-                                    if c.is_ascii_graphic() {
-                                        c
-                                    } else {
-                                        '.'
-                                    }
-                                }
-                                None => '.',
-                            }
-                        );
-                    }
-                }
-
-                println!("");
-                println!("slen: {}", slen_mod_16);
             }
 
             fn open_registry(
@@ -215,7 +148,25 @@ pub mod environment_variable {
                 };
 
                 match r {
-                    ERROR_SUCCESS => Ok(String::from_utf8_lossy(&data).to_string()),
+                    ERROR_SUCCESS => {
+                        let mut rd = vec![0u16; 0];
+                        let mut t = 0;
+                        for (i, e) in data.iter().enumerate() {
+                            if (i & 0x01) == 0 {
+                                t = *e as u16;
+                            } else {
+                                t |= (*e as u16) << 8;
+                                rd.push(t);
+                            }
+                        }
+
+                        if data.len() & 0x01 == 1 {
+                            rd.push(t);
+                        }
+
+                        let result = String::from_utf16_lossy(&rd).to_string();
+                        Ok(result)
+                    }
                     _ => Err(format!("Cannot read user registry, code: {}", r)),
                 }
             }
@@ -223,6 +174,7 @@ pub mod environment_variable {
             fn write_registry(hkey: HKEY, valuename: &String, data: &String) -> Result<(), String> {
                 let value_u16vec = Self::string_to_u16vec(valuename);
                 let data_u8vec = Self::string_to_u8vec(data);
+
                 let r = unsafe {
                     RegSetValueExW(
                         hkey,
@@ -267,14 +219,14 @@ pub mod environment_variable {
                 let handle_key: HKEY = open_result.unwrap();
 
                 let read_result = Self::read_registry(handle_key, name);
+                if read_result.is_err() {
+                    let _ = Self::close_registry(handle_key);
+                    return Err(read_result.unwrap_err());
+                }
 
                 let close_result = Self::close_registry(handle_key);
                 if close_result.is_err() {
                     return Err(close_result.unwrap_err());
-                }
-
-                if read_result.is_err() {
-                    return Err(read_result.unwrap_err());
                 }
 
                 Ok(read_result.unwrap())
@@ -291,14 +243,14 @@ pub mod environment_variable {
                 let handle_key: HKEY = open_result.unwrap();
 
                 let write_result = Self::write_registry(handle_key, &name, &value);
+                if write_result.is_err() {
+                    let _ = Self::close_registry(handle_key);
+                    return Err(write_result.unwrap_err());
+                }
 
                 let close_result = Self::close_registry(handle_key);
                 if close_result.is_err() {
                     return Err(close_result.unwrap_err());
-                }
-
-                if write_result.is_err() {
-                    return Err(write_result.unwrap_err());
                 }
 
                 Ok(())
@@ -331,11 +283,14 @@ pub mod environment_variable {
             fn get_list(&self, name: &String, delimiter: &String) -> Result<Vec<String>, String> {
                 match self.get(name) {
                     Ok(e) => {
-                        return Ok(e.split(delimiter).map(|s| s.trim().to_string()).collect());
+                        let chars = &e.chars().collect::<Vec<char>>();
+                        let removed_terminal = &chars[0..e.len() - 1].iter().collect::<String>();
+                        Ok(removed_terminal
+                            .split(delimiter)
+                            .map(|s| s.trim().to_string())
+                            .collect())
                     }
-                    Err(e) => {
-                        return Err(e);
-                    }
+                    Err(e) => Err(e),
                 }
             }
 
@@ -346,23 +301,50 @@ pub mod environment_variable {
                 delimiter: &String,
             ) -> Result<(), String> {
                 let s = values.join(delimiter);
-                println!("{}", s);
+                self.set(name, &s)
+            }
+
+            fn append_list(
+                &self,
+                name: &String,
+                value: &String,
+                delimiter: &String,
+            ) -> Result<(), String> {
+                return match self.get_list(name, delimiter) {
+                    Ok(l) => {
+                        let mut ll = l;
+                        ll.push(value.to_string());
+                        self.set_list(name, &ll, delimiter)
+                    }
+                    Err(s) => Err(s),
+                };
+            }
+
+            fn insert_list(
+                &self,
+                name: &String,
+                value: &String,
+                to: usize,
+                delimiter: &String,
+            ) -> Result<(), String> {
                 todo!()
             }
 
-            fn append_list(&self, name: &String, value: &String) -> Result<(), String> {
+            fn remove_list(
+                &self,
+                name: &String,
+                by: usize,
+                delimiter: &String,
+            ) -> Result<(), String> {
                 todo!()
             }
 
-            fn insert_list(&self, name: &String, value: &String, to: usize) -> Result<(), String> {
-                todo!()
-            }
-
-            fn remove_list(&self, name: &String, by: usize) -> Result<(), String> {
-                todo!()
-            }
-
-            fn remove_list_from(&self, name: &String, value: &String) -> Result<(), String> {
+            fn remove_list_from(
+                &self,
+                name: &String,
+                value: &String,
+                delimiter: &String,
+            ) -> Result<(), String> {
                 todo!()
             }
 
