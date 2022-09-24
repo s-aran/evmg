@@ -49,7 +49,7 @@ pub mod environment_variable {
     pub mod env {
         use std::path::Path;
 
-        use crate::{envvar::environment_variable::EnvironmentVariable, utils::utils::print_hex};
+        use crate::envvar::environment_variable::EnvironmentVariable;
 
         use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
 
@@ -310,14 +310,14 @@ pub mod environment_variable {
                 value: &String,
                 delimiter: &String,
             ) -> Result<(), String> {
-                return match self.get_list(name, delimiter) {
+                match self.get_list(name, delimiter) {
                     Ok(l) => {
                         let mut ll = l;
                         ll.push(value.to_string());
                         self.set_list(name, &ll, delimiter)
                     }
                     Err(s) => Err(s),
-                };
+                }
             }
 
             fn insert_list(
@@ -327,7 +327,14 @@ pub mod environment_variable {
                 to: usize,
                 delimiter: &String,
             ) -> Result<(), String> {
-                todo!()
+                match self.get_list(name, delimiter) {
+                    Ok(l) => {
+                        let mut ll = l;
+                        ll.insert(to, value.to_string());
+                        self.set_list(name, &ll, delimiter)
+                    }
+                    Err(s) => Err(s),
+                }
             }
 
             fn remove_list(
