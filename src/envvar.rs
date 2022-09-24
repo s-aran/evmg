@@ -378,23 +378,36 @@ pub mod environment_variable {
             }
 
             fn set_path(&self, paths: &Vec<String>) -> Result<(), String> {
-                todo!()
+                self.set_list(&PATH.to_string(), paths, &PATH_DELIMITER.to_string())
             }
 
             fn append_path(&self, path: &Path) -> Result<(), String> {
-                todo!()
+                self.append_list(
+                    &PATH.to_string(),
+                    &path.to_string_lossy().to_string(),
+                    &PATH_DELIMITER.to_string(),
+                )
             }
 
             fn insert_path(&self, path: &Path, to: usize) -> Result<(), String> {
-                todo!()
+                self.insert_list(
+                    &PATH.to_string(),
+                    &path.to_string_lossy().to_string(),
+                    to,
+                    &PATH_DELIMITER.to_string(),
+                )
             }
 
-            fn remove_path(&self, by: usize) -> Result<(), String> {
-                todo!()
+            fn remove_path(&self, from: usize) -> Result<(), String> {
+                self.remove_list(&PATH.to_string(), from, &PATH_DELIMITER.to_string())
             }
 
             fn remove_path_from(&self, path: &Path) -> Result<(), String> {
-                todo!()
+                self.remove_list_from(
+                    &PATH.to_string(),
+                    &path.to_string_lossy().to_string(),
+                    &PATH_DELIMITER.to_string(),
+                )
             }
         }
     }
