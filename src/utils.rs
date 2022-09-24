@@ -67,4 +67,12 @@ pub mod utils {
 
         println!("");
     }
+
+    pub fn print_vec(v: &Vec<String>) {
+        println!("----------------");
+        for e in v {
+            println!("  - {}", e);
+        }
+        println!("----------------");
+    }
 }
