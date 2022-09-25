@@ -50,13 +50,13 @@ pub mod environment_variable {
     pub mod env {
         use std::path::Path;
 
-        use crate::{envvar::environment_variable::EnvironmentVariable, utils::utils::print_vec};
+        use crate::envvar::environment_variable::EnvironmentVariable;
 
         use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
 
         const ENVIRONMENT: &str = "Environment";
-        const PATH: &str = "Path";
-        const PATH_DELIMITER: &str = ";";
+        pub const PATH: &str = "Path";
+        pub const PATH_DELIMITER: &str = ";";
 
         pub struct Environment;
 
