@@ -1,11 +1,32 @@
+mod args;
 mod envvar;
-mod utils;
 mod json;
+mod utils;
 
 use crate::envvar::environment_variable::EnvironmentVariable;
+use std::io::{self, Write};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-fn main() {
+fn main() -> io::Result<()> {
     println!("Hello, world!");
+
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
+    writeln!(&mut stdout, "test")?;
+    stdout.reset()?;
+    writeln!(&mut stdout, "")?;
+
+    let vargs = args::Arguments::args_to_vec();
+    match args::Arguments::parse(&vargs) {
+        Ok(b) => match b {
+            true => {
+                return Ok(());
+            }
+            false => {}
+        },
+        Err(e) => panic!("{}", e),
+    }
+
     let env = envvar::environment_variable::env::Environment::new();
 
     for i in env.get_path().unwrap() {
@@ -51,4 +72,6 @@ fn main() {
     // if err.is_err() {
     //     panic!("{}", err.unwrap_err());
     // }
+
+    Ok(())
 }
