@@ -94,8 +94,28 @@ mod tests {
             .keys()
             .collect::<Vec<&String>>()
             .contains(&&"a".to_string()));
+
         let get_a_result = data.map.get("a");
         assert!(get_a_result.is_some());
         let a = get_a_result.unwrap();
+        assert_eq!("aa".to_string(), a.value);
+        assert_eq!(false, a.overwrite);
+        assert_eq!("|".to_string(), a.delimiter);
+        assert_eq!(-1, a.insert);
+
+        assert!(data
+            .map
+            .keys()
+            .collect::<Vec<&String>>()
+            .contains(&&"b".to_string()));
+
+        let get_b_result = data.map.get("b");
+        assert!(get_b_result.is_some());
+        let b = get_b_result.unwrap();
+        assert_eq!("bb".to_string(), b.value);
+        assert_eq!(true, b.overwrite);
+        assert_eq!("()".to_string(), b.delimiter);
+
+        assert_eq!(2, data.map.keys().len());
     }
 }
