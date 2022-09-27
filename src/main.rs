@@ -1,6 +1,7 @@
 mod args;
 mod envvar;
 mod json;
+mod settings;
 mod utils;
 
 use crate::envvar::environment_variable::EnvironmentVariable;
@@ -16,16 +17,39 @@ fn main() -> io::Result<()> {
     stdout.reset()?;
     writeln!(&mut stdout, "")?;
 
-    let vargs = args::Arguments::args_to_vec();
-    match args::Arguments::parse(&vargs) {
-        Ok(b) => match b {
-            true => {
-                return Ok(());
-            }
-            false => {}
-        },
-        Err(e) => panic!("{}", e),
+    let vargs = args::arguments::args_to_vec();
+    let settings = match args::arguments::parse(&vargs) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
+    };
+
+    if settings.help {
+        utils::utils::show_help();
+        return Ok(());
     }
+
+    if settings.version {
+        println!("0.1");
+        return Ok(());
+    }
+
+    if settings.dry_run {
+        println!("dry-run mode: on");
+    }
+
+    if settings.export.is_some() {
+        println!("export to {}.", settings.export.unwrap());
+        return Ok(());
+    }
+
+    if settings.no_args {
+        println!("no args!!");
+    }
+
+    println!("verbose: {}", settings.verbose);
 
     let env = envvar::environment_variable::env::Environment::new();
 

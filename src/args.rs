@@ -1,13 +1,14 @@
-pub mod Arguments {
-    use std::env;
-
-    use windows_sys::Win32::System::Registry::KEY_SET_VALUE;
+pub mod arguments {
+    use crate::settings::settings;
 
     pub fn args_to_vec() -> Vec<String> {
         std::env::args().collect::<Vec<String>>()
     }
 
-    fn get_key_value(args: &Vec<String>, index: usize) -> Result<(&str, Option<&str>), String> {
+    fn get_key_value_long(
+        args: &Vec<String>,
+        index: usize,
+    ) -> Result<(&str, Option<&str>), String> {
         let r = args.get(index);
         match r {
             Some(e) => {
@@ -22,35 +23,56 @@ pub mod Arguments {
         }
     }
 
-    pub fn parse(args: &Vec<String>) -> Result<bool, String> {
+    pub fn parse(args: &Vec<String>) -> Result<settings::Settings, String> {
+        let mut settings = settings::Settings {
+            no_args: args.len() <= 1,
+            help: false,
+            dry_run: false,
+            verbose: 0,
+            version: false,
+            export: None,
+            import: None,
+            set_variable: None,
+            system: false,
+        };
+
         for (i, a) in args.iter().enumerate() {
             if !a.starts_with("--") {
                 continue;
             }
 
-            let (k, v) = match get_key_value(args, i) {
+            let (k, v) = match get_key_value_long(&args, i) {
                 Ok(e) => e,
                 Err(e) => return Err(e),
             };
 
             match k {
-                "--export" => match v {
-                    Some(e) => {
-                        println!("specified export to {}", e);
-                        return Ok(true);
+                "--help" => settings.help = true,
+                "--dry-run" => settings.dry_run = true,
+                "--export" => {
+                    settings.export = v;
+                    if v.is_none() {
+                        return Err(format!("invalid argument: {}", a));
                     }
-                    None => println!("invalid argument: {}", a),
+                }
+                "--import" => {
+                    settings.import = v;
+                    if v.is_none() {
+                        return Err(format!("invalid argument: {}", a));
+                    }
+                }
+                "--verbose" => match v {
+                    Some(n_str) => match n_str.parse::<u32>() {
+                        Ok(n) => settings.verbose = n,
+                        Err(_) => return Err(format!("invalid argument: {}", a)),
+                    },
+                    None => settings.verbose = 1,
                 },
-                "--version" => {
-                    println!("0.1");
-                    return Ok(true);
-                }
-                _ => {
-                    let v = println!("help");
-                }
+                "--version" => settings.version = true,
+                _ => settings.help = true,
             }
         }
 
-        Err("unexpected arguments".to_string())
+        Ok(settings)
     }
 }

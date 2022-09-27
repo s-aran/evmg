@@ -75,4 +75,17 @@ pub mod utils {
         }
         println!("----------------");
     }
+
+    pub fn show_help() {
+        println!(
+            r#"environment variable manager
+    --help              ... display this help text.
+    --dry_run           ... if this option is specified, environemnt variables are not applied.
+    --verbose           ... display log text.
+    --version           ... display version.
+    --export=filepath   ... export environment variable to json file.
+    --import=filepath   ... imports a json file and applies it to environment variable.
+"#
+        );
+    }
 }
