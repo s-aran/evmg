@@ -51,13 +51,13 @@ pub mod arguments {
                 "--dry-run" => settings.dry_run = true,
                 "--export" => {
                     settings.export = v;
-                    if v.is_none() {
+                    if v.is_none() || v.unwrap().trim().len() <= 0 {
                         return Err(format!("invalid argument: {}", a));
                     }
                 }
                 "--import" => {
                     settings.import = v;
-                    if v.is_none() {
+                    if v.is_none() || v.unwrap().trim().len() <= 0 {
                         return Err(format!("invalid argument: {}", a));
                     }
                 }

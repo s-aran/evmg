@@ -45,6 +45,11 @@ fn main() -> io::Result<()> {
         return Ok(());
     }
 
+    if settings.import.is_some() {
+        println!("import from {}.", settings.import.unwrap());
+        return Ok(());
+    }
+
     if settings.no_args {
         println!("no args!!");
     }
