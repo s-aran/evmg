@@ -4,8 +4,11 @@ mod json;
 mod settings;
 mod utils;
 
-use crate::envvar::environment_variable::EnvironmentVariable;
-use std::io::{self, Write};
+use crate::{envvar::environment_variable::EnvironmentVariable, json::config};
+use std::{
+    io::{self, Write},
+    path::Path,
+};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 fn main() -> io::Result<()> {
@@ -42,6 +45,7 @@ fn main() -> io::Result<()> {
 
     if settings.export.is_some() {
         println!("export to {}.", settings.export.unwrap());
+        config::export_envvar(Path::new(settings.export.unwrap()));
         return Ok(());
     }
 
@@ -57,6 +61,11 @@ fn main() -> io::Result<()> {
     println!("verbose: {}", settings.verbose);
 
     let env = envvar::environment_variable::env::Environment::new();
+
+    match env.list() {
+        Ok(_) => {}
+        Err(e) => panic!("{}", e),
+    }
 
     for i in env.get_path().unwrap() {
         println!("{}", i);

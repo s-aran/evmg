@@ -1,16 +1,22 @@
 pub mod config {
-    use std::collections::BTreeMap;
+    use std::{
+        collections::BTreeMap,
+        fs::{self, File},
+        io::Write,
+        path::Path,
+    };
 
     use serde::{Deserialize, Serialize};
 
-    use crate::envvar::environment_variable::env::PATH_DELIMITER;
+    use crate::envvar::{self, environment_variable::EnvironmentVariable};
 
     fn default_false() -> bool {
         false
     }
 
     fn default_delimiter() -> String {
-        PATH_DELIMITER.to_string()
+        // PATH_DELIMITER.to_string()
+        "".to_string()
     }
 
     fn default_append() -> i32 {
@@ -34,6 +40,47 @@ pub mod config {
 
         #[serde(flatten)]
         pub map: BTreeMap<String, ValueDetail>,
+    }
+
+    pub fn export_envvar(filepath: &Path) -> Result<(), String> {
+        let mut data = Config {
+            version: 1,
+            map: BTreeMap::new(),
+        };
+
+        let envvar = envvar::environment_variable::env::Environment::new();
+        match envvar.list() {
+            Ok(list) => {
+                for (v, d) in list {
+                    data.map.insert(
+                        v,
+                        ValueDetail {
+                            value: d,
+                            overwrite: default_false(),
+                            delimiter: default_delimiter(),
+                            insert: default_append(),
+                        },
+                    );
+                }
+            }
+            Err(e) => return Err(e),
+        }
+
+        let json = match serde_json::to_string_pretty(&data) {
+            Ok(s) => s,
+            Err(e) => return Err(e.to_string()),
+        };
+        let mut file = match File::create(filepath) {
+            Ok(f) => f,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        let write_result = file.write(json.as_bytes());
+        if write_result.is_err() {
+            return Err(write_result.unwrap_err().to_string());
+        }
+
+        Ok(())
     }
 }
 

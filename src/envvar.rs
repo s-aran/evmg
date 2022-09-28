@@ -255,10 +255,14 @@ pub mod environment_variable {
                 };
 
                 match r {
-                    ERROR_SUCCESS => Ok(Some((
-                        String::from_utf16_lossy(&value_u16vec),
-                        Self::u8vec_to_string(&data),
-                    ))),
+                    ERROR_SUCCESS => {
+                        value_u16vec.truncate(value_size as usize);
+                        data.truncate(data_size as usize - std::mem::size_of::<u16>());
+                        Ok(Some((
+                            String::from_utf16_lossy(&value_u16vec),
+                            Self::u8vec_to_string(&data),
+                        )))
+                    }
                     ERROR_NO_MORE_ITEMS => Ok(None),
                     _ => Err(format!("Cannot read user registry. code: {}", r)),
                 }
@@ -286,7 +290,7 @@ pub mod environment_variable {
                     }
 
                     match get_result.unwrap() {
-                        Some((v, d)) => result.push((v, d)),
+                        Some((v, d)) => result.push((v.as_str().to_string(), d)),
                         None => break,
                     }
 
