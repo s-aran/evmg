@@ -3,7 +3,7 @@ pub mod environment_variable {
     use std::path::Path;
 
     pub trait EnvironmentVariable {
-        fn list(&self) -> Vec<String>;
+        fn list(&self) -> Result<Vec<(String, String)>, String>;
 
         fn get(&self, name: &String) -> Result<String, String>;
         fn set(&self, name: &String, value: &String) -> Result<(), String>;
@@ -52,7 +52,10 @@ pub mod environment_variable {
 
         use crate::envvar::environment_variable::EnvironmentVariable;
 
-        use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
+        use windows_sys::Win32::{
+            Foundation::{ERROR_NO_MORE_ITEMS, ERROR_SUCCESS, MAX_PATH},
+            System::Registry::*,
+        };
 
         const ENVIRONMENT: &str = "Environment";
         pub const PATH: &str = "Path";
@@ -83,6 +86,26 @@ pub mod environment_variable {
                 }
 
                 u8vec
+            }
+
+            fn u8vec_to_string(data: &Vec<u8>) -> String {
+                let mut d = vec![0u16; 0];
+                let mut t = 0;
+
+                for (i, e) in data.iter().enumerate() {
+                    if (i & 0x01) == 0 {
+                        t = *e as u16;
+                    } else {
+                        t |= (*e as u16) << 8;
+                        d.push(t);
+                    }
+                }
+
+                if (data.len() & 0x01) == 1 {
+                    d.push(t);
+                }
+
+                String::from_utf16_lossy(&d).to_string()
             }
 
             fn open_registry(
@@ -149,26 +172,8 @@ pub mod environment_variable {
                 };
 
                 match r {
-                    ERROR_SUCCESS => {
-                        let mut rd = vec![0u16; 0];
-                        let mut t = 0;
-                        for (i, e) in data.iter().enumerate() {
-                            if (i & 0x01) == 0 {
-                                t = *e as u16;
-                            } else {
-                                t |= (*e as u16) << 8;
-                                rd.push(t);
-                            }
-                        }
-
-                        if data.len() & 0x01 == 1 {
-                            rd.push(t);
-                        }
-
-                        let result = String::from_utf16_lossy(&rd).to_string();
-                        Ok(result)
-                    }
-                    _ => Err(format!("Cannot read user registry, code: {}", r)),
+                    ERROR_SUCCESS => Ok(Self::u8vec_to_string(&data)),
+                    _ => Err(format!("Cannot read user registry. code: {}", r)),
                 }
             }
 
@@ -202,17 +207,103 @@ pub mod environment_variable {
                     _ => Err(format!("Cannot delete user registry value. code: {}", r)),
                 }
             }
+
+            fn get_registry_value_by_index(
+                hkey: HKEY,
+                index: u32,
+            ) -> Result<Option<(String, String)>, String> {
+                let mut value_u16vec = vec![0u16; MAX_PATH as usize];
+                let mut value_size: u32 = MAX_PATH;
+
+                let mut data_size: u32 = 0;
+
+                // get actual data size
+                let calc_size_result = unsafe {
+                    RegEnumValueW(
+                        hkey,
+                        index,
+                        value_u16vec.as_mut_ptr(),
+                        &mut value_size,
+                        std::ptr::null_mut(),
+                        std::ptr::null_mut(),
+                        std::ptr::null_mut(),
+                        &mut data_size,
+                    )
+                };
+
+                if calc_size_result != ERROR_SUCCESS && calc_size_result != ERROR_NO_MORE_ITEMS {
+                    return Err(format!(
+                        "Cannot read user registry. code: {}",
+                        calc_size_result
+                    ));
+                }
+
+                // get data
+                value_size += std::mem::size_of::<u16>() as u32; // because value_size is not including terminating null character
+                let mut data = vec![0u8; data_size as usize];
+                let r = unsafe {
+                    RegEnumValueW(
+                        hkey,
+                        index,
+                        value_u16vec.as_mut_ptr(),
+                        &mut value_size,
+                        std::ptr::null_mut(),
+                        std::ptr::null_mut(),
+                        data.as_mut_ptr(),
+                        &mut data_size,
+                    )
+                };
+
+                match r {
+                    ERROR_SUCCESS => Ok(Some((
+                        String::from_utf16_lossy(&value_u16vec),
+                        Self::u8vec_to_string(&data),
+                    ))),
+                    ERROR_NO_MORE_ITEMS => Ok(None),
+                    _ => Err(format!("Cannot read user registry. code: {}", r)),
+                }
+            }
         }
 
         impl EnvironmentVariable for Environment {
-            fn list(&self) -> Vec<String> {
-                todo!()
+            fn list(&self) -> Result<Vec<(String, String)>, String> {
+                let mut result: Vec<(String, String)> = Vec::new();
+
+                let open_result =
+                    Self::open_registry(HKEY_CURRENT_USER, &ENVIRONMENT.to_string(), KEY_READ);
+                if open_result.is_err() {
+                    return Err(open_result.unwrap_err());
+                }
+
+                let handle_key: HKEY = open_result.unwrap();
+
+                let mut i = 0;
+                loop {
+                    let get_result = Self::get_registry_value_by_index(handle_key, i);
+                    if get_result.is_err() {
+                        let _ = Self::close_registry(handle_key);
+                        return Err(get_result.unwrap_err());
+                    }
+
+                    match get_result.unwrap() {
+                        Some((v, d)) => result.push((v, d)),
+                        None => break,
+                    }
+
+                    i += 1;
+                }
+
+                let close_result = Self::close_registry(handle_key);
+                if close_result.is_err() {
+                    return Err(close_result.unwrap_err());
+                }
+
+                Ok(result)
             }
 
             fn get(&self, name: &String) -> Result<String, String> {
                 let open_result =
                     Self::open_registry(HKEY_CURRENT_USER, &ENVIRONMENT.to_string(), KEY_READ);
-
                 if open_result.is_err() {
                     return Err(open_result.unwrap_err());
                 }
@@ -240,7 +331,6 @@ pub mod environment_variable {
                 if open_result.is_err() {
                     return Err(open_result.unwrap_err());
                 }
-
                 let handle_key: HKEY = open_result.unwrap();
 
                 let write_result = Self::write_registry(handle_key, &name, &value);
@@ -264,7 +354,6 @@ pub mod environment_variable {
                 if open_result.is_err() {
                     return Err(open_result.unwrap_err());
                 }
-
                 let handle_key: HKEY = open_result.unwrap();
 
                 let delete_result = Self::delete_registry(handle_key, name);
