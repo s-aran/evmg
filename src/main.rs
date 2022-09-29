@@ -27,7 +27,10 @@ fn main() -> io::Result<()> {
     }
 
     if settings.version {
-        println!("0.1");
+        const NAME: Option<&str> = option_env!("CARGO_PKG_NAME");
+        const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+
+        println!("{} {}", NAME.unwrap_or("???"), VERSION.unwrap_or("???"));
         return Ok(());
     }
 
