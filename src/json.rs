@@ -10,7 +10,7 @@ pub mod config {
 
     use crate::envvar::{self, environment_variable::EnvironmentVariable};
 
-    fn default_false() -> bool {
+    fn default_overwrite() -> bool {
         false
     }
 
@@ -26,7 +26,7 @@ pub mod config {
     #[derive(Serialize, Deserialize, Debug)]
     pub struct ValueDetail {
         pub value: String,
-        #[serde(default = "default_false")]
+        #[serde(default = "default_overwrite")]
         pub overwrite: bool,
         #[serde(default = "default_delimiter")]
         pub delimiter: String,
@@ -42,6 +42,15 @@ pub mod config {
         pub map: BTreeMap<String, ValueDetail>,
     }
 
+    fn create_value(value: String) -> ValueDetail {
+        ValueDetail {
+            value,
+            overwrite: default_overwrite(),
+            delimiter: default_delimiter(),
+            insert: default_append(),
+        }
+    }
+
     pub fn export_envvar(filepath: &Path) -> Result<(), String> {
         let mut data = Config {
             version: 1,
@@ -52,15 +61,7 @@ pub mod config {
         match envvar.list() {
             Ok(list) => {
                 for (v, d) in list {
-                    data.map.insert(
-                        v,
-                        ValueDetail {
-                            value: d,
-                            overwrite: default_false(),
-                            delimiter: default_delimiter(),
-                            insert: default_append(),
-                        },
-                    );
+                    data.map.insert(v, create_value(d));
                 }
             }
             Err(e) => return Err(e),
