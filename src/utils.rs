@@ -5,6 +5,7 @@ pub mod utils {
         println!("");
 
         print!("-----+-------------------------------------------------");
+        // for char
         print!("-+-----------------");
 
         let mut chars: Vec<char> = Vec::<char>::with_capacity(16);
@@ -31,6 +32,7 @@ pub mod utils {
             });
 
             if i > 0 && (i & 0x0F) == 0x0F {
+                // for char
                 print!(" | ");
                 for c in &chars {
                     print!("{}", c);
@@ -48,6 +50,7 @@ pub mod utils {
                 print!(" ");
             }
             print!(" | ");
+            // for char
             for i in 0..(slen_mod_16) {
                 print!(
                     "{}",
