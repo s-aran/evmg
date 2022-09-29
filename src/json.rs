@@ -1,10 +1,5 @@
 pub mod config {
-    use std::{
-        collections::BTreeMap,
-        fs::{self, File},
-        io::Write,
-        path::Path,
-    };
+    use std::{collections::BTreeMap, fs::File, io::Write, path::Path};
 
     use serde::{Deserialize, Serialize};
 

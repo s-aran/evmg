@@ -1,4 +1,5 @@
 pub mod utils {
+    #[allow(dead_code)]
     pub fn print_hex(s: &Vec<u8>) {
         print!("     | +0 +1 +2 +3 +4 +5 +6 +7  +8 +9 +A +B +C +D +E +F");
         print!(" | 0123456789ABCDEF");
@@ -71,6 +72,7 @@ pub mod utils {
         println!("");
     }
 
+    #[allow(dead_code)]
     pub fn print_vec(v: &Vec<String>) {
         println!("----------------");
         for e in v {
