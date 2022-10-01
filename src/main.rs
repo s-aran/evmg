@@ -34,10 +34,6 @@ fn main() -> io::Result<()> {
         return Ok(());
     }
 
-    if settings.dry_run {
-        println!("dry-run mode: on");
-    }
-
     if settings.export.is_some() {
         match config::export_envvar(Path::new(settings.export.unwrap())) {
             Ok(_) => return Ok(()),
@@ -56,11 +52,6 @@ fn main() -> io::Result<()> {
                 std::process::exit(1);
             }
         }
-    }
-
-    if settings.import.is_some() {
-        println!("import from {}.", settings.import.unwrap());
-        return Ok(());
     }
 
     let env = envvar::environment_variable::env::Environment::new();
