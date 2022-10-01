@@ -1,5 +1,10 @@
 pub mod config {
-    use std::{collections::BTreeMap, fs::File, io::Write, path::Path};
+    use std::{
+        collections::HashMap,
+        fs::File,
+        io::{Read, Write},
+        path::Path,
+    };
 
     use serde::{Deserialize, Serialize};
 
@@ -20,6 +25,7 @@ pub mod config {
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct ValueDetail {
+        pub key: String,
         pub value: String,
         #[serde(default = "default_overwrite")]
         pub overwrite: bool,
@@ -32,13 +38,12 @@ pub mod config {
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Config {
         pub version: u32,
-
-        #[serde(flatten)]
-        pub map: BTreeMap<String, ValueDetail>,
+        pub data: Vec<ValueDetail>,
     }
 
-    fn create_value(value: String) -> ValueDetail {
+    fn create_value(key: String, value: String) -> ValueDetail {
         ValueDetail {
+            key,
             value,
             overwrite: default_overwrite(),
             delimiter: default_delimiter(),
@@ -49,14 +54,14 @@ pub mod config {
     pub fn export_envvar(filepath: &Path) -> Result<(), String> {
         let mut data = Config {
             version: 1,
-            map: BTreeMap::new(),
+            data: Vec::new(),
         };
 
         let envvar = envvar::environment_variable::env::Environment::new();
         match envvar.list() {
             Ok(list) => {
                 for (v, d) in list {
-                    data.map.insert(v, create_value(d));
+                    data.data.push(create_value(v, d));
                 }
             }
             Err(e) => return Err(e),
@@ -78,67 +83,182 @@ pub mod config {
 
         Ok(())
     }
+
+    pub fn import_envvar(filepath: &Path, dry_run: bool) -> Result<(), String> {
+        if !filepath.exists() {
+            return Err(format!(
+                "file not found. path: {}",
+                filepath.to_string_lossy()
+            ));
+        }
+
+        let mut file = match File::open(filepath) {
+            Ok(f) => f,
+            Err(e) => return Err(e.to_string()),
+        };
+        let mut json = String::new();
+        match file.read_to_string(&mut json) {
+            Ok(_) => {}
+            Err(e) => return Err(format!("{}", e.to_string())),
+        };
+
+        let config = match serde_json::from_str::<Config>(json.as_str()) {
+            Ok(c) => c,
+            Err(e) => return Err(format!("{}", e.to_string())),
+        };
+
+        let envvar = envvar::environment_variable::env::Environment::new();
+        let mut current = HashMap::<String, String>::new();
+        match envvar.list() {
+            Ok(l) => {
+                for e in l {
+                    current.insert(e.0, e.1);
+                }
+            }
+            Err(e) => return Err(e),
+        }
+
+        // division
+        let mut new_values: Vec<&ValueDetail> = Vec::new();
+        let mut overwrite_values: Vec<&ValueDetail> = Vec::new();
+        let mut insert_values: Vec<&ValueDetail> = Vec::new();
+        let mut ignore_values: Vec<&ValueDetail> = Vec::new();
+        for v in config.data.iter() {
+            if current.contains_key(&v.key) {
+                if v.overwrite {
+                    overwrite_values.push(&v);
+                    continue;
+                }
+
+                if v.delimiter.len() > 0 {
+                    insert_values.push(&v);
+                    continue;
+                }
+
+                ignore_values.push(&v);
+                continue;
+            }
+
+            new_values.push(&v);
+        }
+
+        // preview
+        {
+            println!("new:");
+            for e in new_values.iter() {
+                println!("        {}", e.key);
+            }
+            println!("");
+
+            println!("overwrite:");
+            for e in overwrite_values.iter() {
+                println!("        {}", e.key);
+            }
+            println!("");
+
+            println!("append or insert:");
+            for e in insert_values.iter() {
+                println!("        {}", e.key);
+                println!("          index: {}", e.insert);
+            }
+            println!("");
+
+            println!("ignore:");
+            for e in ignore_values.iter() {
+                println!("        {}", e.key);
+            }
+        }
+
+        if !dry_run {
+            for e in new_values.iter() {
+                match envvar.set(&e.key, &e.value) {
+                    Ok(_) => {}
+                    Err(e) => return Err(e),
+                }
+            }
+
+            for e in overwrite_values.iter() {
+                match envvar.set(&e.key, &e.value) {
+                    Ok(_) => {}
+                    Err(e) => return Err(e),
+                }
+            }
+
+            for e in insert_values.iter() {
+                if e.insert < 0 {
+                    match envvar.append_list(&e.key, &e.value, &e.delimiter) {
+                        Ok(_) => continue,
+                        Err(e) => return Err(e),
+                    }
+                }
+
+                match envvar.insert_list(&e.key, &e.value, e.insert as usize, &e.delimiter) {
+                    Ok(_) => continue,
+                    Err(e) => return Err(e),
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use crate::json::config::{Config, ValueDetail};
 
     #[test]
     fn test_serialize_normal() {
         let mut data = Config {
             version: 1,
-            map: BTreeMap::new(),
+            data: Vec::new(),
         };
 
-        data.map.insert(
-            "a".to_string(),
-            ValueDetail {
-                value: "aa".to_string(),
-                overwrite: false,
-                delimiter: "|".to_string(),
-                insert: -1,
-            },
-        );
+        data.data.push(ValueDetail {
+            key: "a".to_string(),
+            value: "aa".to_string(),
+            overwrite: false,
+            delimiter: "|".to_string(),
+            insert: -1,
+        });
 
-        data.map.insert(
-            "b".to_string(),
-            ValueDetail {
-                value: "bb".to_string(),
-                overwrite: true,
-                delimiter: "()".to_string(),
-                insert: 1,
-            },
-        );
+        data.data.push(ValueDetail {
+            key: "b".to_string(),
+            value: "bb".to_string(),
+            overwrite: true,
+            delimiter: "()".to_string(),
+            insert: 1,
+        });
 
         let to_string_result = serde_json::to_string(&data);
         assert!(to_string_result.is_ok());
 
         let json_str = to_string_result.unwrap();
         assert_eq!(
-            r#"{"version":1,"a":{"value":"aa","overwrite":false,"delimiter":"|","insert":-1},"b":{"value":"bb","overwrite":true,"delimiter":"()","insert":1}}"#,
+            r#"{"version":1,"data":[{"key":"a","value":"aa","overwrite":false,"delimiter":"|","insert":-1},{"key":"b","value":"bb","overwrite":true,"delimiter":"()","insert":1}]}"#,
             json_str
         )
     }
 
     #[test]
     fn test_deserialize_normal() {
-        let json_str = r#"{"version":1,"a":{"value":"aa","overwrite":false,"delimiter":"|","insert":-1},"b":{"value":"bb","overwrite":true,"delimiter":"()","insert":1}}"#;
+        let json_str = r#"{"version":1,"data":[{"key":"a","value":"aa","overwrite":false,"delimiter":"|","insert":-1},{"key":"b","value":"bb","overwrite":true,"delimiter":"()","insert":1}]}"#;
         let from_str_result = serde_json::from_str::<Config>(&json_str);
         assert!(from_str_result.is_ok());
 
         let data = from_str_result.unwrap();
 
         assert_eq!(1, data.version);
-        assert!(data
-            .map
-            .keys()
-            .collect::<Vec<&String>>()
-            .contains(&&"a".to_string()));
+        assert!(
+            data.data
+                .iter()
+                .filter(|e| e.key == "a".to_string())
+                .collect::<Vec<&ValueDetail>>()
+                .len()
+                == 1
+        );
 
-        let get_a_result = data.map.get("a");
+        let get_a_result = data.data.get(0);
         assert!(get_a_result.is_some());
         let a = get_a_result.unwrap();
         assert_eq!("aa".to_string(), a.value);
@@ -146,19 +266,22 @@ mod tests {
         assert_eq!("|".to_string(), a.delimiter);
         assert_eq!(-1, a.insert);
 
-        assert!(data
-            .map
-            .keys()
-            .collect::<Vec<&String>>()
-            .contains(&&"b".to_string()));
+        assert!(
+            data.data
+                .iter()
+                .filter(|e| e.key == "b".to_string())
+                .collect::<Vec<&ValueDetail>>()
+                .len()
+                == 1
+        );
 
-        let get_b_result = data.map.get("b");
+        let get_b_result = data.data.get(1);
         assert!(get_b_result.is_some());
         let b = get_b_result.unwrap();
         assert_eq!("bb".to_string(), b.value);
         assert_eq!(true, b.overwrite);
         assert_eq!("()".to_string(), b.delimiter);
 
-        assert_eq!(2, data.map.keys().len());
+        assert_eq!(2, data.data.len());
     }
 }

@@ -49,6 +49,16 @@ fn main() -> io::Result<()> {
     }
 
     if settings.import.is_some() {
+        match config::import_envvar(Path::new(settings.import.unwrap()), settings.dry_run) {
+            Ok(_) => return Ok(()),
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        }
+    }
+
+    if settings.import.is_some() {
         println!("import from {}.", settings.import.unwrap());
         return Ok(());
     }
