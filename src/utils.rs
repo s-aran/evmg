@@ -85,7 +85,7 @@ pub mod utils {
         println!(
             r#"environment variable manager
     --help              ... display this help text.
-    --dry_run           ... if this option is specified, environemnt variables are not applied.
+    --dry-run           ... if this option is specified, environemnt variables are not applied.
     --verbose           ... display log text.
     --version           ... display version.
     --export=filepath   ... export environment variable to json file.
