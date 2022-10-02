@@ -507,6 +507,136 @@ pub mod environment_variable {
 
     #[cfg(target_os = "linux")]
     pub mod env {
-        use crate::envvar::EnvironmentVariable;
+        use libc::{getenv, setenv};
+        use std::env;
+        use std::ffi::CStr;
+        use std::os::raw::c_char;
+        use std::path::Path;
+
+        use crate::envvar::environment_variable::EnvironmentVariable;
+
+        pub const PATH: &str = "PATH";
+        pub const PATH_DELIMITER: &str = ":";
+
+        pub struct Environment;
+
+        impl Environment {
+            pub fn new() -> Self {
+                Self {}
+            }
+
+            fn string_to_i8vec(s: &String) -> Vec<i8> {
+                let mut ws: Vec<i8> = s.chars().map(|e| e as i8).collect();
+                // terminal character
+                ws.push(0x00);
+
+                ws
+            }
+
+            fn c_char_to_str<'a>(lpsz: *const c_char) -> Result<&'a str, String> {
+                match unsafe { CStr::from_ptr(lpsz) }.to_str() {
+                    Ok(s) => Ok(s),
+                    Err(e) => Err(e.to_string()),
+                }
+            }
+        }
+
+        impl EnvironmentVariable for Environment {
+            fn list(&self) -> Result<Vec<(String, String)>, String> {
+                let vars = env::vars();
+                Ok(vars.collect::<Vec<(String, String)>>())
+            }
+
+            fn get(&self, name: &String) -> Result<String, String> {
+                let name_i8vec = Self::string_to_i8vec(name);
+                let v: *mut c_char = unsafe { getenv(name_i8vec.as_ptr()) };
+                match Self::c_char_to_str(v) {
+                    Ok(s) => Ok(s.to_string()),
+                    Err(e) => Err(e),
+                }
+            }
+
+            fn set(&self, name: &String, value: &String) -> Result<(), String> {
+                todo!()
+            }
+
+            fn delete(&self, name: &String) -> Result<(), String> {
+                todo!()
+            }
+
+            fn get_list(&self, name: &String, delimiter: &String) -> Result<Vec<String>, String> {
+                todo!()
+            }
+
+            fn set_list(
+                &self,
+                name: &String,
+                values: &Vec<String>,
+                delimiter: &String,
+            ) -> Result<(), String> {
+                todo!()
+            }
+
+            fn append_list(
+                &self,
+                name: &String,
+                value: &String,
+                delimiter: &String,
+            ) -> Result<(), String> {
+                todo!()
+            }
+
+            fn insert_list(
+                &self,
+                name: &String,
+                value: &String,
+                to: usize,
+                delimiter: &String,
+            ) -> Result<(), String> {
+                todo!()
+            }
+
+            fn remove_list(
+                &self,
+                name: &String,
+                from: usize,
+                delimiter: &String,
+            ) -> Result<(), String> {
+                todo!()
+            }
+
+            fn remove_list_from(
+                &self,
+                name: &String,
+                value: &String,
+                delimiter: &String,
+            ) -> Result<(), String> {
+                todo!()
+            }
+
+            fn get_path(&self) -> Result<Vec<String>, String> {
+                todo!()
+            }
+
+            fn set_path(&self, paths: &Vec<String>) -> Result<(), String> {
+                todo!()
+            }
+
+            fn append_path(&self, path: &Path) -> Result<(), String> {
+                todo!()
+            }
+
+            fn insert_path(&self, path: &Path, to: usize) -> Result<(), String> {
+                todo!()
+            }
+
+            fn remove_path(&self, by: usize) -> Result<(), String> {
+                todo!()
+            }
+
+            fn remove_path_from(&self, path: &Path) -> Result<(), String> {
+                todo!()
+            }
+        }
     }
 }
