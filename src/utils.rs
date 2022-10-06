@@ -82,7 +82,7 @@ pub mod utils {
     }
 
     pub fn show_help() {
-        println!(
+        print!(
             r#"environment variable manager
     --help              ... display this help text.
     --dry-run           ... if this option is specified, environemnt variables are not applied.
@@ -91,5 +91,15 @@ pub mod utils {
     --import=filepath   ... imports a json file and applies it to environment variable.
 "#
         );
+
+        // #[cfg(target_os="windows")]
+        // println!("");
+
+        #[cfg(target_os="linux")]
+        print!(
+            r#"
+--- linux only ---
+    --shell=name        ... shell name (e.g. bash, zsh, ...), effective only if --export is specified.
+"#)
     }
 }

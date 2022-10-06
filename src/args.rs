@@ -34,6 +34,8 @@ pub mod arguments {
             import: None,
             set_variable: None,
             system: false,
+            #[cfg(target_os = "linux")]
+            shell: None,
         };
 
         for (i, a) in args.iter().enumerate() {
