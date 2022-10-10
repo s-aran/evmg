@@ -1,5 +1,7 @@
 pub mod arguments {
-    use crate::settings::settings::{Settings, ShellRc};
+    use crate::settings::settings::Settings;
+    #[cfg(target_os = "linux")]
+    use crate::settings::settings::ShellRc;
 
     pub fn args_to_vec() -> Vec<String> {
         std::env::args().collect::<Vec<String>>()
@@ -35,6 +37,8 @@ pub mod arguments {
             import: None,
             set_variable: None,
             system: false,
+            #[cfg(target_os = "windows")]
+            registry: false,
             #[cfg(target_os = "linux")]
             shell_rc: ShellRc {
                 shell: Some("bash"),

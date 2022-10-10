@@ -8,6 +8,7 @@ mod utils;
 mod shellrc;
 
 use crate::{envvar::environment_variable::EnvironmentVariable, json::config};
+#[cfg(target_os = "linux")]
 use shellrc::shellrc::{BashRunCommandFileData, ShellRunCommandFile};
 use std::{
     io::{self, Write},
