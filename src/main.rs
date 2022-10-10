@@ -4,7 +4,11 @@ mod json;
 mod settings;
 mod utils;
 
+#[cfg(target_os = "linux")]
+mod shellrc;
+
 use crate::{envvar::environment_variable::EnvironmentVariable, json::config};
+use shellrc::shellrc::{BashRunCommandFileData, ShellRunCommandFile};
 use std::{
     io::{self, Write},
     path::Path,
@@ -58,7 +62,12 @@ fn main() -> io::Result<()> {
 
     match env.list() {
         Ok(l) => {
-            let mut stdout = StandardStream::stdout(ColorChoice::Always);
+            let choice = if settings.no_color {
+                ColorChoice::Never
+            } else {
+                ColorChoice::Always
+            };
+            let mut stdout = StandardStream::stdout(choice);
             for (k, v) in l.iter() {
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
                 write!(&mut stdout, "{}", k)?;

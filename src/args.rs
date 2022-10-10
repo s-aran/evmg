@@ -1,5 +1,5 @@
 pub mod arguments {
-    use crate::settings::settings;
+    use crate::settings::settings::{Settings, ShellRc};
 
     pub fn args_to_vec() -> Vec<String> {
         std::env::args().collect::<Vec<String>>()
@@ -23,10 +23,11 @@ pub mod arguments {
         }
     }
 
-    pub fn parse(args: &Vec<String>) -> Result<settings::Settings, String> {
-        let mut settings = settings::Settings {
+    pub fn parse(args: &Vec<String>) -> Result<Settings, String> {
+        let mut settings = Settings {
             no_args: args.len() <= 1,
             help: false,
+            no_color: false,
             dry_run: false,
             verbose: 0,
             version: false,
@@ -35,7 +36,10 @@ pub mod arguments {
             set_variable: None,
             system: false,
             #[cfg(target_os = "linux")]
-            shell: None,
+            shell_rc: ShellRc {
+                shell: Some("bash"),
+                output_rc: Some(".envvar_bash"),
+            },
         };
 
         for (i, a) in args.iter().enumerate() {
@@ -50,6 +54,7 @@ pub mod arguments {
 
             match k {
                 "--help" => settings.help = true,
+                "--no-color" => settings.no_color = true,
                 "--dry-run" => settings.dry_run = true,
                 "--export" => {
                     settings.export = v;
@@ -59,6 +64,20 @@ pub mod arguments {
                 }
                 "--import" => {
                     settings.import = v;
+                    if v.is_none() || v.unwrap().trim().len() <= 0 {
+                        return Err(format!("invalid argument: {}", a));
+                    }
+                }
+                #[cfg(target_os = "linux")]
+                "--shell" => {
+                    settings.shell_rc.shell = v;
+                    if v.is_none() || v.unwrap().trim().len() <= 0 {
+                        return Err(format!("invalid argument: {}", a));
+                    }
+                }
+                #[cfg(target_os = "linux")]
+                "--rc" => {
+                    settings.shell_rc.output_rc = v;
                     if v.is_none() || v.unwrap().trim().len() <= 0 {
                         return Err(format!("invalid argument: {}", a));
                     }
