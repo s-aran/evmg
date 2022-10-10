@@ -18,10 +18,10 @@ envvar はコマンドラインベースの JSON による環境変数管理ツ�
 
 ### Linux 限定
 
-| オプション        | コメント                                         | デフォルト             |
-| ----------------- | ------------------------------------------------ | ---------------------- |
-| `--rc=<filepath>` | 環境変数を設定するスクリプトを _filepath_ に出力 | `.envvar_<shell name>` |
-| `--shell=<name>`  | `rc` ファイルの種類 (例: `bash`, `zsh`, ...)     | `bash`                 |
+| オプション        | コメント                                         | デフォルト               |
+| ----------------- | ------------------------------------------------ | ------------------------ |
+| `--rc=<filepath>` | 環境変数を設定するスクリプトを _filepath_ に出力 | `.envvar_<shell name>rc` |
+| `--shell=<name>`  | `rc` ファイルの種類 (例: `bash`, `zsh`, ...)     | `bash`                   |
 
 ## 使い方
 
@@ -61,14 +61,14 @@ envvar --import=input.json
 
 ### Linux
 
-`rc` ファイルに出力します。以下のコマンドは `input.json` からインポートして bash 用に `~/.envvar_bash` に出力する例です。
+`rc` ファイルに出力します。以下のコマンドは `input.json` からインポートして bash 用に `~/.envvar_bashrc` に出力する例です。
 
 ```sh
-envvar --import=input.json --shell=bash --rc=~/.envvar_bash
+envvar --import=input.json --shell=bash --rc=~/.envvar_bashrc
 ```
 
 あらかじめ，お使いのシェルの `rc` ファイル (例: `~/.profile`, `~/.bashrc`)に以下を追記してください。bash の場合の例です。
 
 ```sh
-source ~/.envvarrc_bash
+source ~/.envvar_bashrc
 ```

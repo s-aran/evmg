@@ -18,10 +18,10 @@ envvar is a command-line based an environment variable management tool with JSON
 
 ### Linux Only
 
-| Option            | Comment                                                      | Default                |
-| ----------------- | ------------------------------------------------------------ | ---------------------- |
-| `--rc=<filepath>` | Output scripts that set environment variables to _filepath_. | `.envvar_<shell name>` |
-| `--shell=<name>`  | Type of `rc` file (e.g., `bash`, `zsh`, ...)                 | `bash`                 |
+| Option            | Comment                                                      | Default                  |
+| ----------------- | ------------------------------------------------------------ | ------------------------ |
+| `--rc=<filepath>` | Output scripts that set environment variables to _filepath_. | `.envvar_<shell name>rc` |
+| `--shell=<name>`  | Type of `rc` file (e.g., `bash`, `zsh`, ...)                 | `bash`                   |
 
 ## Usage
 
@@ -61,14 +61,14 @@ envvar --import=input.json
 
 ### Linux
 
-Output to `rc` file. The following command line is an example of importing from `input.json` and outputting to `~/.envvarrc_bash` for bash.
+Output to `rc` file. The following command line is an example of importing from `input.json` and outputting to `~/.envvar_bashrc` for bash.
 
 ```sh
-envvar --import=input.json --shell=bash --rc=~/.envvar_bash
+envvar --import=input.json --shell=bash --rc=~/.envvar_bashrc
 ```
 
 In advance, add the following that to your shell `rc` file (e.g., `~/.profile`, `~/.bashrc`). Example for `bash`:
 
 ```sh
-source ~/.envvarrc_bash
+source ~/.envvar_bashrc
 ```
