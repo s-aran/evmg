@@ -9,7 +9,8 @@ mod shellrc;
 
 use crate::{envvar::environment_variable::EnvironmentVariable, json::config};
 #[cfg(target_os = "linux")]
-use shellrc::shellrc::{BashRunCommandFileData, ShellRunCommandFile};
+use shellrc::shellrc::ShellRunCommandFile;
+use shellrc::shellrc::ShellRunCommandFileData;
 use std::{
     io::{self, Write},
     path::Path,
@@ -50,11 +51,33 @@ fn main() -> io::Result<()> {
     }
 
     if settings.import.is_some() {
-        match config::import_envvar(Path::new(settings.import.unwrap()), settings.dry_run) {
-            Ok(_) => return Ok(()),
+        let mut envvar = envvar::environment_variable::env::Environment::new();
+        match config::import_envvar(
+            Path::new(settings.import.unwrap()),
+            settings.dry_run,
+            &mut envvar,
+        ) {
+            Ok(e) => e,
             Err(e) => {
                 eprintln!("{}", e);
                 std::process::exit(1);
+            }
+        };
+
+        #[cfg(target_os = "linux")]
+        {
+            let output_path = match settings.shell_rc.output_rc {
+                Some(s) => s,
+                None => format!(".envvar_{}rc", settings.shell_rc.shell.unwrap()),
+            };
+
+            envvar.init_shell(&settings.shell_rc.shell.unwrap().to_string());
+            match envvar.write_rc(&Path::new(&output_path)) {
+                Ok(_) => return Ok(()),
+                Err(e) => {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                }
             }
         }
     }

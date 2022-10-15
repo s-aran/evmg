@@ -2,7 +2,7 @@ pub mod settings {
     #[cfg(target_os = "linux")]
     pub struct ShellRc<'a> {
         pub shell: Option<&'a str>,
-        pub output_rc: Option<&'a str>,
+        pub output_rc: Option<String>,
     }
 
     pub struct Settings<'a> {

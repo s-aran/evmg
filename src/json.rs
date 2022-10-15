@@ -8,7 +8,10 @@ pub mod config {
 
     use serde::{Deserialize, Serialize};
 
-    use crate::envvar::{self, environment_variable::EnvironmentVariable};
+    use crate::envvar::{
+        self,
+        environment_variable::{env, EnvironmentVariable},
+    };
 
     fn default_overwrite() -> bool {
         false
@@ -84,7 +87,11 @@ pub mod config {
         Ok(())
     }
 
-    pub fn import_envvar(filepath: &Path, dry_run: bool) -> Result<(), String> {
+    pub fn import_envvar(
+        filepath: &Path,
+        dry_run: bool,
+        envvar: &mut envvar::environment_variable::env::Environment,
+    ) -> Result<(), String> {
         if !filepath.exists() {
             return Err(format!(
                 "file not found. path: {}",
@@ -107,7 +114,6 @@ pub mod config {
             Err(e) => return Err(format!("{}", e.to_string())),
         };
 
-        let envvar = envvar::environment_variable::env::Environment::new();
         let mut current = HashMap::<String, String>::new();
         match envvar.list() {
             Ok(l) => {

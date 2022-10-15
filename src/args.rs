@@ -42,7 +42,7 @@ pub mod arguments {
             #[cfg(target_os = "linux")]
             shell_rc: ShellRc {
                 shell: Some("bash"),
-                output_rc: Some(".envvar_bash"),
+                output_rc: None,
             },
         };
 
@@ -78,13 +78,19 @@ pub mod arguments {
                     if v.is_none() || v.unwrap().trim().len() <= 0 {
                         return Err(format!("invalid argument: {}", a));
                     }
+
+                    if settings.shell_rc.output_rc.is_none() {
+                        // update default value
+                        settings.shell_rc.output_rc =
+                            Some(format!(".envvar_{}rc", v.unwrap()).to_string());
+                    }
                 }
                 #[cfg(target_os = "linux")]
                 "--rc" => {
-                    settings.shell_rc.output_rc = v;
                     if v.is_none() || v.unwrap().trim().len() <= 0 {
                         return Err(format!("invalid argument: {}", a));
                     }
+                    settings.shell_rc.output_rc = Some(v.unwrap().to_string());
                 }
                 "--verbose" => match v {
                     Some(n_str) => match n_str.parse::<u32>() {

@@ -6,44 +6,107 @@ pub mod environment_variable {
         fn list(&self) -> Result<Vec<(String, String)>, String>;
 
         fn get(&self, name: &String) -> Result<String, String>;
-        fn set(&self, name: &String, value: &String) -> Result<(), String>;
-        fn delete(&self, name: &String) -> Result<(), String>;
+        fn set(&mut self, name: &String, value: &String) -> Result<(), String>;
+        fn delete(&mut self, name: &String) -> Result<(), String>;
 
-        fn get_list(&self, name: &String, delimiter: &String) -> Result<Vec<String>, String>;
+        fn get_list(&self, name: &String, delimiter: &String) -> Result<Vec<String>, String> {
+            match self.get(name) {
+                Ok(e) => {
+                    let chars = &e.chars().collect::<Vec<char>>();
+                    let removed_terminal = &chars[0..e.len() - 1].iter().collect::<String>();
+                    Ok(removed_terminal
+                        .split(delimiter)
+                        .map(|s| s.to_string())
+                        .collect())
+                }
+                Err(e) => Err(e),
+            }
+        }
+
         fn set_list(
-            &self,
+            &mut self,
             name: &String,
             values: &Vec<String>,
             delimiter: &String,
-        ) -> Result<(), String>;
+        ) -> Result<(), String> {
+            let s = values.join(delimiter);
+            self.set(name, &s)
+        }
+
         fn append_list(
-            &self,
+            &mut self,
             name: &String,
             value: &String,
             delimiter: &String,
-        ) -> Result<(), String>;
+        ) -> Result<(), String> {
+            match self.get_list(name, delimiter) {
+                Ok(l) => {
+                    let mut ll = l;
+                    ll.push(value.to_string());
+                    self.set_list(name, &ll, delimiter)
+                }
+                Err(s) => Err(s),
+            }
+        }
+
         fn insert_list(
-            &self,
+            &mut self,
             name: &String,
             value: &String,
             to: usize,
             delimiter: &String,
-        ) -> Result<(), String>;
-        fn remove_list(&self, name: &String, from: usize, delimiter: &String)
-            -> Result<(), String>;
+        ) -> Result<(), String> {
+            match self.get_list(name, delimiter) {
+                Ok(l) => {
+                    let mut ll = l;
+                    ll.insert(to, value.to_string());
+                    self.set_list(name, &ll, delimiter)
+                }
+                Err(s) => Err(s),
+            }
+        }
+
+        fn remove_list(
+            &mut self,
+            name: &String,
+            from: usize,
+            delimiter: &String,
+        ) -> Result<(), String> {
+            match self.get_list(name, delimiter) {
+                Ok(l) => {
+                    let mut ll = l;
+                    ll.remove(from);
+                    self.set_list(name, &ll, delimiter)
+                }
+                Err(s) => Err(s),
+            }
+        }
+
         fn remove_list_from(
-            &self,
+            &mut self,
             name: &String,
             value: &String,
             delimiter: &String,
-        ) -> Result<(), String>;
+        ) -> Result<(), String> {
+            match self.get_list(name, delimiter) {
+                Ok(l) => {
+                    let ll = l
+                        .iter()
+                        .filter(|&e| e != value)
+                        .map(|e| e.to_string())
+                        .collect::<Vec<String>>();
+                    self.set_list(name, &ll, delimiter)
+                }
+                Err(s) => Err(s),
+            }
+        }
 
         fn get_path(&self) -> Result<Vec<String>, String>;
-        fn set_path(&self, paths: &Vec<String>) -> Result<(), String>;
-        fn append_path(&self, path: &Path) -> Result<(), String>;
-        fn insert_path(&self, path: &Path, to: usize) -> Result<(), String>;
-        fn remove_path(&self, by: usize) -> Result<(), String>;
-        fn remove_path_from(&self, path: &Path) -> Result<(), String>;
+        fn set_path(&mut self, paths: &Vec<String>) -> Result<(), String>;
+        fn append_path(&mut self, path: &Path) -> Result<(), String>;
+        fn insert_path(&mut self, path: &Path, to: usize) -> Result<(), String>;
+        fn remove_path(&mut self, by: usize) -> Result<(), String>;
+        fn remove_path_from(&mut self, path: &Path) -> Result<(), String>;
     }
 
     #[cfg(target_os = "windows")]
@@ -374,98 +437,6 @@ pub mod environment_variable {
                 Ok(())
             }
 
-            fn get_list(&self, name: &String, delimiter: &String) -> Result<Vec<String>, String> {
-                match self.get(name) {
-                    Ok(e) => {
-                        let chars = &e.chars().collect::<Vec<char>>();
-                        let removed_terminal = &chars[0..e.len() - 1].iter().collect::<String>();
-                        Ok(removed_terminal
-                            .split(delimiter)
-                            .map(|s| s.to_string())
-                            .collect())
-                    }
-                    Err(e) => Err(e),
-                }
-            }
-
-            fn set_list(
-                &self,
-                name: &String,
-                values: &Vec<String>,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                let s = values.join(delimiter);
-                self.set(name, &s)
-            }
-
-            fn append_list(
-                &self,
-                name: &String,
-                value: &String,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                match self.get_list(name, delimiter) {
-                    Ok(l) => {
-                        let mut ll = l;
-                        ll.push(value.to_string());
-                        self.set_list(name, &ll, delimiter)
-                    }
-                    Err(s) => Err(s),
-                }
-            }
-
-            fn insert_list(
-                &self,
-                name: &String,
-                value: &String,
-                to: usize,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                match self.get_list(name, delimiter) {
-                    Ok(l) => {
-                        let mut ll = l;
-                        ll.insert(to, value.to_string());
-                        self.set_list(name, &ll, delimiter)
-                    }
-                    Err(s) => Err(s),
-                }
-            }
-
-            fn remove_list(
-                &self,
-                name: &String,
-                from: usize,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                match self.get_list(name, delimiter) {
-                    Ok(l) => {
-                        let mut ll = l;
-                        ll.remove(from);
-                        self.set_list(name, &ll, delimiter)
-                    }
-                    Err(s) => Err(s),
-                }
-            }
-
-            fn remove_list_from(
-                &self,
-                name: &String,
-                value: &String,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                match self.get_list(name, delimiter) {
-                    Ok(l) => {
-                        let ll = l
-                            .iter()
-                            .filter(|&e| e != value)
-                            .map(|e| e.to_string())
-                            .collect::<Vec<String>>();
-                        self.set_list(name, &ll, delimiter)
-                    }
-                    Err(s) => Err(s),
-                }
-            }
-
             fn get_path(&self) -> Result<Vec<String>, String> {
                 self.get_list(&PATH.to_string(), &PATH_DELIMITER.to_string())
             }
@@ -514,15 +485,37 @@ pub mod environment_variable {
         use std::path::Path;
 
         use crate::envvar::environment_variable::EnvironmentVariable;
+        use crate::shellrc::shellrc::{ShellRunCommandFile, ShellRunCommandFileData};
 
         pub const PATH: &str = "PATH";
         pub const PATH_DELIMITER: &str = ":";
 
-        pub struct Environment;
+        pub struct Environment {
+            shellrc: Option<ShellRunCommandFileData>,
+        }
 
         impl Environment {
             pub fn new() -> Self {
-                Self {}
+                Self { shellrc: None }
+            }
+
+            pub fn init_shell(&mut self, shell: &String) {
+                if self.shellrc.is_none() {
+                    self.shellrc = Some({
+                        let mut d = ShellRunCommandFileData::new(shell);
+                        // set current environment variables
+                        for (k, v) in self.list().unwrap().iter() {
+                            d.add(k, v);
+                        }
+                        d
+                    });
+
+                    return;
+                }
+            }
+
+            pub fn write_rc(&self, filepath: &Path) -> Result<(), String> {
+                self.shellrc.as_ref().unwrap().write(filepath)
             }
 
             fn string_to_i8vec(s: &String) -> Vec<i8> {
@@ -537,6 +530,21 @@ pub mod environment_variable {
                 match unsafe { CStr::from_ptr(lpsz) }.to_str() {
                     Ok(s) => Ok(s),
                     Err(e) => Err(e.to_string()),
+                }
+            }
+
+            fn write(&self, output_path: &String) {
+                let s = match &self.shellrc {
+                    Some(e) => e,
+                    None => panic!("shell not initialized"),
+                };
+
+                match s.write(&Path::new(&output_path)) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        std::process::exit(1);
+                    }
                 }
             }
         }
@@ -556,86 +564,50 @@ pub mod environment_variable {
                 }
             }
 
-            fn set(&self, name: &String, value: &String) -> Result<(), String> {
-                todo!()
+            fn set(&mut self, name: &String, value: &String) -> Result<(), String> {
+                (&mut self.shellrc).as_mut().unwrap().set(name, value);
+                Ok(())
             }
 
-            fn delete(&self, name: &String) -> Result<(), String> {
-                todo!()
-            }
-
-            fn get_list(&self, name: &String, delimiter: &String) -> Result<Vec<String>, String> {
-                todo!()
-            }
-
-            fn set_list(
-                &self,
-                name: &String,
-                values: &Vec<String>,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                todo!()
-            }
-
-            fn append_list(
-                &self,
-                name: &String,
-                value: &String,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                todo!()
-            }
-
-            fn insert_list(
-                &self,
-                name: &String,
-                value: &String,
-                to: usize,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                todo!()
-            }
-
-            fn remove_list(
-                &self,
-                name: &String,
-                from: usize,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                todo!()
-            }
-
-            fn remove_list_from(
-                &self,
-                name: &String,
-                value: &String,
-                delimiter: &String,
-            ) -> Result<(), String> {
-                todo!()
+            fn delete(&mut self, name: &String) -> Result<(), String> {
+                (&mut self.shellrc).as_mut().unwrap().delete(name)
             }
 
             fn get_path(&self) -> Result<Vec<String>, String> {
-                todo!()
+                self.get_list(&PATH.to_string(), &PATH_DELIMITER.to_string())
             }
 
-            fn set_path(&self, paths: &Vec<String>) -> Result<(), String> {
-                todo!()
+            fn set_path(&mut self, paths: &Vec<String>) -> Result<(), String> {
+                self.set_list(&PATH.to_string(), paths, &PATH_DELIMITER.to_string())
             }
 
-            fn append_path(&self, path: &Path) -> Result<(), String> {
-                todo!()
+            fn append_path(&mut self, path: &Path) -> Result<(), String> {
+                self.append_list(
+                    &PATH.to_string(),
+                    &path.to_string_lossy().to_string(),
+                    &PATH_DELIMITER.to_string(),
+                )
             }
 
-            fn insert_path(&self, path: &Path, to: usize) -> Result<(), String> {
-                todo!()
+            fn insert_path(&mut self, path: &Path, to: usize) -> Result<(), String> {
+                self.insert_list(
+                    &PATH.to_string(),
+                    &path.to_string_lossy().to_string(),
+                    to,
+                    &PATH_DELIMITER.to_string(),
+                )
             }
 
-            fn remove_path(&self, by: usize) -> Result<(), String> {
-                todo!()
+            fn remove_path(&mut self, from: usize) -> Result<(), String> {
+                self.remove_list(&PATH.to_string(), from, &PATH_DELIMITER.to_string())
             }
 
-            fn remove_path_from(&self, path: &Path) -> Result<(), String> {
-                todo!()
+            fn remove_path_from(&mut self, path: &Path) -> Result<(), String> {
+                self.remove_list_from(
+                    &PATH.to_string(),
+                    &path.to_string_lossy().to_string(),
+                    &PATH_DELIMITER.to_string(),
+                )
             }
         }
     }
