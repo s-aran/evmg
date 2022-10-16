@@ -8,10 +8,7 @@ pub mod config {
 
     use serde::{Deserialize, Serialize};
 
-    use crate::envvar::{
-        self,
-        environment_variable::{env, EnvironmentVariable},
-    };
+    use crate::envvar::{self, environment_variable::EnvironmentVariable};
 
     fn default_overwrite() -> bool {
         false

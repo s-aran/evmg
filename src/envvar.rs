@@ -391,7 +391,7 @@ pub mod environment_variable {
                 Ok(read_result.unwrap())
             }
 
-            fn set(&self, name: &String, value: &String) -> Result<(), String> {
+            fn set(&mut self, name: &String, value: &String) -> Result<(), String> {
                 let open_result =
                     Self::open_registry(HKEY_CURRENT_USER, &ENVIRONMENT.to_string(), KEY_WRITE);
 
@@ -414,7 +414,7 @@ pub mod environment_variable {
                 Ok(())
             }
 
-            fn delete(&self, name: &String) -> Result<(), String> {
+            fn delete(&mut self, name: &String) -> Result<(), String> {
                 let open_result =
                     Self::open_registry(HKEY_CURRENT_USER, &ENVIRONMENT.to_string(), KEY_WRITE);
 
@@ -441,11 +441,11 @@ pub mod environment_variable {
                 self.get_list(&PATH.to_string(), &PATH_DELIMITER.to_string())
             }
 
-            fn set_path(&self, paths: &Vec<String>) -> Result<(), String> {
+            fn set_path(&mut self, paths: &Vec<String>) -> Result<(), String> {
                 self.set_list(&PATH.to_string(), paths, &PATH_DELIMITER.to_string())
             }
 
-            fn append_path(&self, path: &Path) -> Result<(), String> {
+            fn append_path(&mut self, path: &Path) -> Result<(), String> {
                 self.append_list(
                     &PATH.to_string(),
                     &path.to_string_lossy().to_string(),
@@ -453,7 +453,7 @@ pub mod environment_variable {
                 )
             }
 
-            fn insert_path(&self, path: &Path, to: usize) -> Result<(), String> {
+            fn insert_path(&mut self, path: &Path, to: usize) -> Result<(), String> {
                 self.insert_list(
                     &PATH.to_string(),
                     &path.to_string_lossy().to_string(),
@@ -462,11 +462,11 @@ pub mod environment_variable {
                 )
             }
 
-            fn remove_path(&self, from: usize) -> Result<(), String> {
+            fn remove_path(&mut self, from: usize) -> Result<(), String> {
                 self.remove_list(&PATH.to_string(), from, &PATH_DELIMITER.to_string())
             }
 
-            fn remove_path_from(&self, path: &Path) -> Result<(), String> {
+            fn remove_path_from(&mut self, path: &Path) -> Result<(), String> {
                 self.remove_list_from(
                     &PATH.to_string(),
                     &path.to_string_lossy().to_string(),
