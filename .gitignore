@@ -13,3 +13,7 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+**/__pycache__
+/tests/it/venv
+
