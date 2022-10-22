@@ -8,14 +8,19 @@ pub mod config {
 
     use serde::{Deserialize, Serialize};
 
-    use crate::envvar::{self, environment_variable::EnvironmentVariable};
+    use crate::envvar::{
+        self,
+        environment_variable::{
+            env::{PATH, PATH_DELIMITER},
+            EnvironmentVariable,
+        },
+    };
 
     fn default_overwrite() -> bool {
         false
     }
 
     fn default_delimiter() -> String {
-        // PATH_DELIMITER.to_string()
         "".to_string()
     }
 
@@ -42,11 +47,16 @@ pub mod config {
     }
 
     fn create_value(key: String, value: String) -> ValueDetail {
+        let delimiter = if &key.as_str() == &PATH {
+            PATH_DELIMITER.to_string()
+        } else {
+            default_delimiter()
+        };
         ValueDetail {
             key,
             value,
             overwrite: default_overwrite(),
-            delimiter: default_delimiter(),
+            delimiter,
             insert: default_append(),
         }
     }
