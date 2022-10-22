@@ -490,6 +490,8 @@ pub mod environment_variable {
         pub const PATH: &str = "PATH";
         pub const PATH_DELIMITER: &str = ":";
 
+        const IGNORE_KEYS: [&str; 3] = ["_", "PWD", "SHLVL"];
+
         pub struct Environment {
             shellrc: Option<ShellRunCommandFileData>,
         }
@@ -552,7 +554,11 @@ pub mod environment_variable {
         impl EnvironmentVariable for Environment {
             fn list(&self) -> Result<Vec<(String, String)>, String> {
                 let vars = env::vars();
-                Ok(vars.collect::<Vec<(String, String)>>())
+                let env_list = vars.collect::<Vec<(String, String)>>();
+                let ignored = env_list
+                    .iter()
+                    .filter(|(k, _)| !IGNORE_KEYS.contains(&(*k).as_str()));
+                Ok(ignored.cloned().collect::<Vec<(String, String)>>())
             }
 
             fn get(&self, name: &String) -> Result<String, String> {
