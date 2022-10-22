@@ -6,8 +6,15 @@ from tests.it.lib.base_test import BaseTest
 
 
 class TestExport(BaseTest):
+    TEST_FILENAME = "test.json"
+
+    def teardown_method(self, method: str):
+        if os.path.exists(TestExport.TEST_FILENAME):
+            os.remove(TestExport.TEST_FILENAME)
+        return super().teardown_method(method)
+
     def test_normal(self):
-        OUTPUT_FILEPATH = os.path.join("/tmp", "test.json")
+        OUTPUT_FILEPATH = os.path.join(TestExport.TEST_FILENAME)
         COMMAND_LINE = [Utils.MainProgram, "--export={}".format(OUTPUT_FILEPATH)]
         ENV = {
             "hogehoge": "piyopiyo",
@@ -76,7 +83,7 @@ class TestExport(BaseTest):
             assert data["insert"] == -1
 
     def test_empty(self):
-        OUTPUT_FILEPATH = os.path.join("/tmp", "test.json")
+        OUTPUT_FILEPATH = os.path.join(TestExport.TEST_FILENAME)
         COMMAND_LINE = [Utils.MainProgram, "--export={}".format(OUTPUT_FILEPATH)]
 
         expected_return = 0
