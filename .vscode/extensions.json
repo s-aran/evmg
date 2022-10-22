@@ -1,6 +1,10 @@
 {
   "recommendations": [
     "rust-lang.rust-analyzer",
-    "Swellaby.rust-pack"
+    "swellaby.rust-pack",
+    "njpwerner.autodocstring",
+    "kevinrose.vsc-python-indent",
+    "ms-python.vscode-pylance",
+    "donjayamanne.python-environment-manager"
   ]
 }
