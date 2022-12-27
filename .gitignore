@@ -15,5 +15,5 @@ Cargo.lock
 /target
 
 **/__pycache__
-/tests/it/venv
+/venv/
 
