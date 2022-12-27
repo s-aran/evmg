@@ -124,11 +124,68 @@ pub mod environment_variable {
         pub const PATH: &str = "Path";
         pub const PATH_DELIMITER: &str = ";";
 
-        pub struct Environment;
+        const IGNORE_KEYS: [&str; 1] = ["__PSLockDownPolicy"];
+
+        pub struct Environment {}
 
         impl Environment {
             pub fn new() -> Self {
-                Environment {}
+                Self {}
+            }
+        }
+
+        impl EnvironmentVariable for Environment {
+            fn list(&self) -> Result<Vec<(String, String)>, String> {
+                let vars = env::vars();
+                let env_list = vars.collect::<Vec<(String, String)>>();
+                let ignored = env_list
+                    .iter()
+                    .filter(|(k, _)| !IGNORE_KEYS.contains(&(*k).as_str()));
+                Ok(ignored.cloned().collect::<Vec<(String, String)>>())
+            }
+
+            fn get(&self, name: &String) -> Result<String, String> {
+                todo!()
+            }
+
+            fn set(&mut self, name: &String, value: &String) -> Result<(), String> {
+                todo!()
+            }
+
+            fn delete(&mut self, name: &String) -> Result<(), String> {
+                todo!()
+            }
+
+            fn get_path(&self) -> Result<Vec<String>, String> {
+                todo!()
+            }
+
+            fn set_path(&mut self, paths: &Vec<String>) -> Result<(), String> {
+                todo!()
+            }
+
+            fn append_path(&mut self, path: &Path) -> Result<(), String> {
+                todo!()
+            }
+
+            fn insert_path(&mut self, path: &Path, to: usize) -> Result<(), String> {
+                todo!()
+            }
+
+            fn remove_path(&mut self, by: usize) -> Result<(), String> {
+                todo!()
+            }
+
+            fn remove_path_from(&mut self, path: &Path) -> Result<(), String> {
+                todo!()
+            }
+        }
+
+        pub struct EnvironmentRegistry;
+
+        impl EnvironmentRegistry {
+            pub fn new() -> Self {
+                Self {}
             }
 
             fn string_to_u16vec(s: &String) -> Vec<u16> {
@@ -332,7 +389,7 @@ pub mod environment_variable {
             }
         }
 
-        impl EnvironmentVariable for Environment {
+        impl EnvironmentVariable for EnvironmentRegistry {
             fn list(&self) -> Result<Vec<(String, String)>, String> {
                 let mut result: Vec<(String, String)> = Vec::new();
 
