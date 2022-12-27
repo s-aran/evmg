@@ -8,20 +8,21 @@ envvar is a command-line based an environment variable management tool with JSON
 
 ### Common
 
-| Option                | Comment                | Default |
-| --------------------- | ---------------------- | ------- |
-| `--version`           | Display version        | N/A     |
-| `--export=<filepath>` | Export to _filepath_   | N/A     |
-| `--import=<filepath>` | Import from _filepath_ | N/A     |
-| `--dry-run`           | Set dry run mode       | False   |
-| `--no-color`          | Set no color mode      | False   |
+| Option                | Comment                                                      | Default                              |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------ |
+| `--version`           | Display version                                              | N/A                                  |
+| `--export=<filepath>` | Export to _filepath_                                         | N/A                                  |
+| `--import=<filepath>` | Import from _filepath_                                       | N/A                                  |
+| `--dry-run`           | Set dry run mode                                             | False                                |
+| `--no-color`          | Set no color mode                                            | False                                |
+| `--rc=<filepath>`     | Output scripts that set environment variables to _filepath_. | `.envvar_<shell name>rc`             |
+| `--shell=<name>`      | Type of `rc` file (e.g., `powershell`, `bash`, `zsh`, ...)   | Windows: `powershell`, Linux: `bash` |
 
-### Linux Only
+### Windows Only
 
-| Option            | Comment                                                      | Default                  |
-| ----------------- | ------------------------------------------------------------ | ------------------------ |
-| `--rc=<filepath>` | Output scripts that set environment variables to _filepath_. | `.envvar_<shell name>rc` |
-| `--shell=<name>`  | Type of `rc` file (e.g., `bash`, `zsh`, ...)                 | `bash`                   |
+| Option       | Comment                                                        | Default |
+| ------------ | -------------------------------------------------------------- | ------- |
+| `--registry` | Set environment variables to the current user registry (HKCU). | False   |
 
 ## Usage
 
@@ -53,10 +54,16 @@ Import from a JSON file and apply to the environment variables. Difference by pl
 
 #### Windows
 
-Set to the registry. The following command line is an example of importing from `input.json`.
+Output to `ps1` file. The following command line is an example of importing from a `input.json` and outputting to `~/.envvar.ps1` for PowerShell:
+
+```ps1
+envvar --import=input.json --shell=powershell --rc=~/.envvar.ps1
+```
+
+If you specified `--registry` option, Set to the registry. At this time, no output to file is performed. The following command line is an example of importing from `input.json`.
 
 ```sh
-envvar --import=input.json
+envvar --import=input.json --registry
 ```
 
 ### Linux
