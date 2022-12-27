@@ -15,7 +15,7 @@ class Utils:
         return platform.system() == "Windows"
 
     MainProgramName = "envvar{}".format(".exe" if is_windows() else "")
-    MainProgram = os.path.join("..", "..", "target", "release", MainProgramName)
+    MainProgram = os.path.join("target", "release", MainProgramName)
 
     @staticmethod
     def execute(

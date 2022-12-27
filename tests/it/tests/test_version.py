@@ -7,7 +7,7 @@ from tests.it.lib.base_test import BaseTest
 
 class TestVersion(BaseTest):
     def test_normal(self):
-        CARGO_TOML_PATH = os.path.join("..", "..", "Cargo.toml")
+        CARGO_TOML_PATH = os.path.join("Cargo.toml")
         COMMAND_LINE = [Utils.MainProgram, "--version"]
 
         cargo_toml = toml.load(CARGO_TOML_PATH)
