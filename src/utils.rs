@@ -105,4 +105,14 @@ pub mod utils {
 "#
         )
     }
+
+    pub fn get_name() -> &'static str {
+        option_env!("CARGO_PKG_NAME").unwrap_or("???")
+    }
+
+
+    pub fn get_version() -> &'static str {
+       option_env!("CARGO_PKG_VERSION").unwrap_or("???")
+    }
+
 }

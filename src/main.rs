@@ -32,10 +32,10 @@ fn main() -> io::Result<()> {
     }
 
     if settings.version {
-        const NAME: Option<&str> = option_env!("CARGO_PKG_NAME");
-        const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+        let NAME: &str = utils::utils::get_name();
+        let VERSION: &str = utils::utils::get_version();
 
-        println!("{} {}", NAME.unwrap_or("???"), VERSION.unwrap_or("???"));
+        println!("{} {}", NAME, VERSION);
         return Ok(());
     }
 
