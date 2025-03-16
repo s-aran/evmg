@@ -171,12 +171,8 @@ pub mod environment_variable {
                 String::from_utf16_lossy(&d).to_string()
             }
 
-            fn open_registry(
-                hkey: isize,
-                subkey: &String,
-                samdesired: u32,
-            ) -> Result<HKEY, String> {
-                let mut handle_key: HKEY = 0;
+            fn open_registry(hkey: HKEY, subkey: &String, samdesired: u32) -> Result<HKEY, String> {
+                let mut handle_key: HKEY = std::ptr::null_mut();
                 let subkey_u16vec = Self::string_to_u16vec(subkey);
                 let lpsubkey = subkey_u16vec.as_ptr();
 
